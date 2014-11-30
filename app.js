@@ -264,6 +264,38 @@ var Launchpad = function(midiPort){
 var lp = new Launchpad();
 
 lp.setMappings([
+	{
+		'coords' : {'x':0,'y':'*'},
+		'color' : lp.colors.green.high
+	},
+	{
+		'coords' : {'x':1,'y':'*'},
+		'color' : lp.colors.red.high
+	},
+	{
+		'coords' : {'x':2,'y':'*'},
+		'color' : lp.colors.yellow.high
+	},
+	{
+		'coords' : {'x':3,'y':'*'},
+		'color' : lp.colors.orange.high
+	},
+	{
+		'coords' : {'x':4,'y':'*'},
+		'color' : lp.colors.green.high
+	},
+	{
+		'coords' : {'x':5,'y':'*'},
+		'color' : lp.colors.red.high
+	},
+	{
+		'coords' : {'x':6,'y':'*'},
+		'color' : lp.colors.yellow.high
+	},
+	{
+		'coords' : {'x':7,'y':'*'},
+		'color' : lp.colors.orange.high
+	},
 	{'coords': {'x':8,'y':0},
 	'frames': [
 		{
@@ -282,7 +314,7 @@ lp.setMappings([
 				{'coords':{'x':2,'y':2}, 'color':lp.colors.red.high},
 				{'coords':{'x':1,'y':3}, 'color':lp.colors.yellow.high}
 			]
-		}, 
+		},
 		{
 			'duration': 0, 'buttons':0
 		}
