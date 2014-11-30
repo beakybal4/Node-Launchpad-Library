@@ -47,13 +47,9 @@ var Launchpad = function(midiPort){
 	var nextBuffer = 52;
 
 	this.bulkUpdate = function(frames){
-		var newFrames = [];
-		for (var i in frames){
-			newFrames.push(frames[i]);
-		}
-		frames = newFrames;
-		var frame = frames.pop();
-		if (frame){
+
+		var frame = frames.shift();
+		if (frame && frame.buttons!=0){
 			
 			var duration = frame.duration;
 			var messages = frame.buttons;
@@ -76,22 +72,40 @@ var Launchpad = function(midiPort){
 			setTimeout(function(){
 				lp.bulkUpdate(frames);
 			},duration);
-		} else {
-			// finished bulk updating
-			sendMessage([176, 0, 48]);
-		}
-		if (frames[0]==null){
+		} 
+
+		// 0 frame = wipe board
+		if (frame && frame.buttons==0){
 			this.reset();
+			var tb = nextBuffer;
+			nextBuffer = currentBuffer;
+			currentBuffer = tb;
+			setTimeout(function(){
+				lp.bulkUpdate(frames);
+			},frame.duration);
+		}
+
+		// end of animation
+		if (frames.length==0){
+			sendMessage([176, 0, 48]);
 		}
 	}
 
 	this.update = function(message){
 		var button = lp.coordToButton(message.coords);
 		if (message.frames){
-			lp.bulkUpdate(message.frames)
+			lp.bulkUpdate(cloneArray(message.frames))
 		} else if (message.color){
 			sendMessage([button[0],button[1],message.color]);
 		}
+	}
+
+	function cloneArray(arr){
+		var nArr = [];
+		for (var i in arr){
+			nArr.push(arr[i]);
+		}
+		return nArr;
 	}
 
 	this.end = function(message){
@@ -101,7 +115,6 @@ var Launchpad = function(midiPort){
 
 	this.reset();
 
-	// TODO: support animation
 	input.on('message', function(deltaTime, message) {
 		// console.log('m:' + message + ' d:' + deltaTime);
 		var action = message[2]!=0 ? "pressed" : "released";
@@ -141,11 +154,6 @@ var Launchpad = function(midiPort){
 		if (code!=144){
 			y=8
 		}
-		/*
-		if (x==0){
-			x=8;
-		}
-		*/
 		return {'x':x, 'y':y};
 	}
 
@@ -183,45 +191,6 @@ var Launchpad = function(midiPort){
 			}
 		}
 
-		/*
-		var xOverrides = map.filter(function(mapping){
-			if (mapping.coords.x=="*" && mapping.coords.y!="*"){return mapping;}
-		});
-		var yOverrides = map.filter(function(mapping){
-			if (mapping.coords.y=="*" && mapping.coords.x!="*"){return mapping;}
-		});
-		var globalOverrides = map.filter(function(mapping){
-			if (mapping.coords.y=="*" && mapping.coords.x=="*"){return mapping;}
-		})
-
-		// there MUST be a better way of doing this...
-		for (var i in xOverrides){
-			var mapping = xOverrides[i];
-			for(var x=0; x<9; x++){
-				var mapping = {'coords':{'x':x,'y':mapping.coords.y},'color':mapping.color,'frames':mapping.frames};
-				setMapping(mapping);
-			}
-		}
-		for (var i in yOverrides){
-			var mapping = xOverrides[i];
-			for(var y=0; y<9; y++){
-				var mapping = {'coords':{'x':mapping.coords.x,'y':y},'color':mapping.color,'frames':mapping.frames};
-				setMapping(mapping);
-			}
-		}
-		for (var i in globalOverrides){
-			var mapping = globalOverrides[i];
-			for(var y=0; y<9; y++){
-				for(var x=0; x<9; x++){
-					var mapping = {'coords':{'x':x,'y':y},'color':mapping.color,'frames':mapping.frames};
-					setMapping(mapping);
-				}
-			}
-		}
-		*/
-	
-
-
 	}
 
 	function setMapping(mapping){
@@ -237,6 +206,7 @@ var Launchpad = function(midiPort){
 					var buttons = mapping.frames[i].buttons;
 					var resolvedButtons = [];
 					var buttonsToResolve = [];
+
 					for (var j in buttons){
 						if (buttons[j].coords.x=="*" || buttons[j].coords.x=="*"){
 							buttonsToResolve.push(buttons[j]);
@@ -245,7 +215,8 @@ var Launchpad = function(midiPort){
 						}
 					}
 					for (var j in buttonsToResolve){
-						resolvedButtons.splice(resolveMultiMappings(buttonsToResolve[j]));
+						var rmm = resolveMultiMappings(buttonsToResolve[j]);
+						resolvedButtons = resolvedButtons.concat(rmm);
 					}
 					mapping.frames[i].buttons = resolvedButtons;
 				}
@@ -303,12 +274,18 @@ lp.setMappings([
 			]
 		},
 		{
+			'duration': 0, 'buttons':0
+		},
+		{
 			'duration': 1000, 'buttons': [
 				{'coords':{'x':3,'y':1}, 'color':lp.colors.orange.high},
 				{'coords':{'x':2,'y':2}, 'color':lp.colors.red.high},
 				{'coords':{'x':1,'y':3}, 'color':lp.colors.yellow.high}
 			]
-		}, null
+		}, 
+		{
+			'duration': 0, 'buttons':0
+		}
 	]}
 ]);
 
